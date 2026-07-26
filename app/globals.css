@@ -1,0 +1,518 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f7f5f0;
+  --foreground: #23211d;
+  --muted: #7d766c;
+  --panel: #fffdf8;
+  --panel-soft: #efebe2;
+  --line: #ded7c9;
+  --accent: #2f7c76;
+  --accent-strong: #235f5a;
+  --danger: #a74036;
+  --shadow: 0 18px 50px rgba(43, 38, 30, 0.08);
+}
+
+:root[data-theme="dark"] {
+  --background: #161716;
+  --foreground: #efede8;
+  --muted: #a8a29a;
+  --panel: #20211f;
+  --panel-soft: #2a2b28;
+  --line: #3a3a35;
+  --accent: #78b8ad;
+  --accent-strong: #9ccdc5;
+  --danger: #e27d72;
+  --shadow: 0 18px 50px rgba(0, 0, 0, 0.25);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--background);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100dvh;
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  overscroll-behavior: none;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.appShell {
+  display: grid;
+  grid-template-columns: 304px minmax(0, 1fr);
+  min-height: 100dvh;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border-right: 1px solid var(--line);
+  background: color-mix(in srgb, var(--panel) 78%, var(--background));
+  padding: calc(20px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom));
+}
+
+.brandRow,
+.topBar,
+.notionResults a,
+.quickActions,
+.settingsActions,
+.settingsHeader {
+  display: flex;
+  align-items: center;
+}
+
+.brandRow,
+.settingsHeader {
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+h1,
+h2 {
+  margin: 0;
+  font-weight: 740;
+  letter-spacing: 0;
+}
+
+h1 {
+  font-size: 24px;
+}
+
+h2 {
+  font-size: 28px;
+}
+
+.iconButton {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--foreground);
+  font-size: 18px;
+}
+
+.secondaryButton,
+.sendNotionButton,
+.sendKindButton {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-weight: 700;
+}
+
+.settingsIconButton {
+  position: relative;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--foreground);
+  font-size: 18px;
+}
+
+.connectionDot {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 8px;
+  height: 8px;
+  border: 1px solid var(--panel);
+  border-radius: 999px;
+  background: var(--muted);
+}
+
+.connectionDot.connected {
+  background: var(--accent);
+}
+
+.pageList {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+  overflow: auto;
+}
+
+.pageItem {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--foreground);
+  padding: 10px 12px;
+  text-align: left;
+}
+
+.pageItem:hover,
+.pageItem.active {
+  border-color: var(--line);
+  background: var(--panel-soft);
+}
+
+.pageTitle {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 680;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pageMeta,
+.notionMiniStatus {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.editorPane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--accent) 10%, transparent), transparent 28rem),
+    var(--background);
+}
+
+.topBar {
+  justify-content: flex-end;
+  gap: 14px;
+  min-height: 64px;
+  border-bottom: 1px solid var(--line);
+  padding: 0 28px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.quickEditor {
+  width: min(980px, 100%);
+  margin: 0 auto;
+  padding: 92px 40px 120px;
+}
+
+.quickTitleInput {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--foreground);
+  font-size: clamp(42px, 6vw, 76px);
+  font-weight: 780;
+  letter-spacing: 0;
+  line-height: 1.05;
+}
+
+.quickTitleInput::placeholder,
+.settingsFields input::placeholder {
+  color: color-mix(in srgb, var(--muted) 68%, transparent);
+}
+
+.quickActions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(130px, 1fr));
+  gap: 10px;
+  margin-top: 32px;
+}
+
+.sendNotionButton,
+.secondaryButton,
+.sendKindButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 18px;
+}
+
+.sendNotionButton {
+  background: var(--foreground);
+  color: var(--background);
+}
+
+.sendKindButton {
+  gap: 8px;
+  background: var(--foreground);
+  color: var(--background);
+}
+
+.sendKindButton span {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--background) 18%, transparent);
+  font-size: 13px;
+}
+
+.sendNotionButton:disabled,
+.sendKindButton:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.secondaryButton {
+  background: var(--panel);
+  color: var(--foreground);
+}
+
+.clearButton {
+  grid-column: 1 / -1;
+  width: max-content;
+}
+
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(22, 20, 17, 0.42);
+  padding: 24px;
+}
+
+.settingsModal {
+  display: grid;
+  gap: 18px;
+  width: min(680px, 100%);
+  max-height: min(760px, calc(100dvh - 48px));
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  padding: 24px;
+}
+
+.settingsFields {
+  display: grid;
+  gap: 12px;
+}
+
+.settingsFields label {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.settingsFields input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  outline: 0;
+  background: var(--background);
+  color: var(--foreground);
+  padding: 12px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.settingsActions {
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.notionStatus {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.notionResults {
+  display: grid;
+  gap: 6px;
+  max-height: 168px;
+  overflow: auto;
+}
+
+.notionResults a {
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: var(--panel-soft);
+  color: var(--foreground);
+  padding: 8px 10px;
+  text-decoration: none;
+  text-align: left;
+}
+
+.notionResults span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notionResults small {
+  flex: 0 0 auto;
+  color: var(--accent-strong);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+@media (max-width: 780px) {
+  body {
+    overflow: hidden;
+  }
+
+  .appShell {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .sidebar {
+    gap: 10px;
+    max-height: 168px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    padding: calc(12px + env(safe-area-inset-top)) 14px 10px;
+  }
+
+  .brandRow {
+    min-height: 42px;
+  }
+
+  h1 {
+    font-size: 19px;
+  }
+
+  .settingsIconButton {
+    width: 38px;
+    height: 38px;
+  }
+
+  .pageList {
+    display: grid;
+    grid-auto-columns: minmax(168px, 54vw);
+    grid-auto-flow: column;
+    grid-template-columns: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 2px;
+    scroll-snap-type: x proximity;
+  }
+
+  .pageItem {
+    min-height: 58px;
+    scroll-snap-align: start;
+  }
+
+  .editorPane {
+    min-height: 0;
+  }
+
+  .quickEditor {
+    display: grid;
+    align-content: center;
+    min-height: 100%;
+    padding: 28px 18px calc(110px + env(safe-area-inset-bottom));
+  }
+
+  .quickTitleInput {
+    font-size: 34px;
+    line-height: 1.15;
+  }
+
+  .quickActions {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 5;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin: 0;
+    border-top: 1px solid var(--line);
+    background: color-mix(in srgb, var(--panel) 92%, transparent);
+    padding: 10px 12px calc(12px + env(safe-area-inset-bottom));
+    backdrop-filter: blur(18px);
+  }
+
+  .sendKindButton {
+    min-height: 54px;
+    padding: 0 8px;
+    font-size: 14px;
+  }
+
+  .clearButton {
+    position: fixed;
+    right: 14px;
+    bottom: calc(78px + env(safe-area-inset-bottom));
+    z-index: 6;
+    min-height: 36px;
+    padding: 0 12px;
+    font-size: 12px;
+  }
+
+  .topBar {
+    min-height: 56px;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 0 18px;
+  }
+
+  .settingsActions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .modalBackdrop {
+    align-items: end;
+    padding: 0;
+  }
+
+  .settingsModal {
+    width: 100%;
+    max-height: calc(100dvh - env(safe-area-inset-top) - 12px);
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 8px 8px 0 0;
+    padding: 20px 18px calc(20px + env(safe-area-inset-bottom));
+  }
+}
