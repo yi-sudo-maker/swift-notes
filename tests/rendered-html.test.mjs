@@ -30,14 +30,15 @@ test("server-renders the note app shell", async () => {
   const html = await response.text();
   assert.match(html, /<title>Swift Notes<\/title>/i);
   assert.match(html, /クイック送信/);
-  assert.match(html, /タイトルだけ入力/);
-  assert.match(html, /Notionへ送るタイトル/);
+  assert.match(html, /投稿先/);
+  assert.match(html, /メモ入力/);
+  assert.match(html, /投稿したいメモを入力してください/);
   assert.match(html, /タスク/);
   assert.match(html, /メモ/);
   assert.match(html, /アイデア/);
   assert.doesNotMatch(
     html,
-    /ブロック追加|新規ページ|ページ削除|Notionトークン|送信履歴を検索|ダークモード|とりあえず|めも/,
+    /ブロック追加|新規ページ|ページ削除|Notionトークン|送信履歴を検索|ダークモード|とりあえず|めも|タイトルだけ入力|入力を空にする/,
   );
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|SkeletonPreview/);
 });

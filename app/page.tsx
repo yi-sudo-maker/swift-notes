@@ -85,7 +85,7 @@ export default function Home() {
   const [notionStatus, setNotionStatus] = useState("未接続");
   const [isNotionLoading, setIsNotionLoading] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const titleRef = useRef<HTMLInputElement | null>(null);
+  const titleRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -162,14 +162,6 @@ export default function Home() {
         page.id === activePage.id ? { ...page, title, updatedAt: now() } : page,
       ),
     );
-  }
-
-  function createDraft() {
-    const page = createPage();
-    setSaveState("保存中...");
-    setPages((current) => [page, ...current]);
-    setActivePageId(page.id);
-    window.setTimeout(() => titleRef.current?.focus(), 0);
   }
 
   async function connectNotionDataSource() {
@@ -326,7 +318,7 @@ export default function Home() {
     }
   }
 
-  function handleTitleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+  function handleTitleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (event.key === "Enter" && event.metaKey) {
       event.preventDefault();
       void sendCurrentPageToNotion("タスク");
@@ -383,16 +375,26 @@ export default function Home() {
         </header>
 
         <article className="quickEditor">
-          <p className="eyebrow">タイトルだけ入力</p>
-          <input
-            ref={titleRef}
-            className="quickTitleInput"
-            value={activePage.title}
-            onChange={(event) => updateActiveTitle(event.target.value)}
-            onKeyDown={handleTitleKeyDown}
-            placeholder="Notionへ送るタイトル"
-            aria-label="Notionへ送るタイトル"
-          />
+          <div className="mobileDestination">
+            <p>投稿先</p>
+            <button type="button" onClick={() => setIsSettingsOpen(true)}>
+              <span>Inbox</span>
+              <span aria-hidden="true">›</span>
+            </button>
+          </div>
+          <label className="memoField">
+            <span>メモ入力</span>
+            <textarea
+              ref={titleRef}
+              className="quickTitleInput"
+              value={activePage.title}
+              onChange={(event) => updateActiveTitle(event.target.value)}
+              onKeyDown={handleTitleKeyDown}
+              placeholder="投稿したいメモを入力してください"
+              aria-label="メモ入力"
+              rows={4}
+            />
+          </label>
           <div className="quickActions">
             {sendButtons.map((button) => (
               <button
@@ -400,15 +402,12 @@ export default function Home() {
                 key={button.kind}
                 type="button"
                 onClick={() => sendCurrentPageToNotion(button.kind)}
-                disabled={isNotionLoading}
+                disabled={isNotionLoading || !activePage.title.trim()}
               >
                 <span aria-hidden="true">{button.icon}</span>
                 {button.kind}
               </button>
             ))}
-            <button className="secondaryButton clearButton" type="button" onClick={createDraft}>
-              入力を空にする
-            </button>
           </div>
         </article>
       </section>

@@ -52,7 +52,8 @@ body {
 }
 
 button,
-input {
+input,
+textarea {
   font: inherit;
 }
 
@@ -231,10 +232,26 @@ h2 {
   padding: 92px 40px 120px;
 }
 
+.mobileDestination {
+  display: none;
+}
+
+.memoField {
+  display: grid;
+  gap: 14px;
+}
+
+.memoField > span {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+}
+
 .quickTitleInput {
   width: 100%;
   border: 0;
   outline: 0;
+  resize: none;
   background: transparent;
   color: var(--foreground);
   font-size: clamp(42px, 6vw, 76px);
@@ -396,6 +413,18 @@ h2 {
 }
 
 @media (max-width: 780px) {
+  :root {
+    --background: #f3f3f7;
+    --foreground: #25262a;
+    --muted: #96979c;
+    --panel: #ffffff;
+    --panel-soft: #ffffff;
+    --line: #ececf1;
+    --accent: #26272b;
+    --accent-strong: #26272b;
+    --shadow: 0 12px 32px rgba(21, 22, 28, 0.06);
+  }
+
   body {
     overflow: hidden;
   }
@@ -406,56 +435,118 @@ h2 {
   }
 
   .sidebar {
-    gap: 10px;
-    max-height: 168px;
+    gap: 0;
+    max-height: none;
     border-right: 0;
-    border-bottom: 1px solid var(--line);
-    padding: calc(12px + env(safe-area-inset-top)) 14px 10px;
+    border-bottom: 0;
+    background: var(--background);
+    padding: calc(46px + env(safe-area-inset-top)) 34px 20px;
   }
 
   .brandRow {
-    min-height: 42px;
+    min-height: 24px;
+    justify-content: flex-start;
   }
 
-  h1 {
-    font-size: 19px;
+  .brandRow > div,
+  .connectionDot,
+  .pageList {
+    display: none;
   }
 
   .settingsIconButton {
-    width: 38px;
-    height: 38px;
+    width: 34px;
+    height: 34px;
+    border: 0;
+    background: transparent;
+    color: var(--foreground);
+    font-size: 0;
   }
 
-  .pageList {
-    display: grid;
-    grid-auto-columns: minmax(168px, 54vw);
-    grid-auto-flow: column;
-    grid-template-columns: none;
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding-bottom: 2px;
-    scroll-snap-type: x proximity;
-  }
-
-  .pageItem {
-    min-height: 58px;
-    scroll-snap-align: start;
+  .settingsIconButton::before {
+    content: "";
+    width: 27px;
+    height: 21px;
+    background:
+      linear-gradient(var(--foreground), var(--foreground)) 0 0 / 27px 3px no-repeat,
+      linear-gradient(var(--foreground), var(--foreground)) 0 9px / 19px 3px no-repeat,
+      linear-gradient(var(--foreground), var(--foreground)) 0 18px / 11px 3px no-repeat;
+    border-radius: 2px;
   }
 
   .editorPane {
     min-height: 0;
+    background: var(--background);
   }
 
   .quickEditor {
     display: grid;
-    align-content: center;
+    align-content: start;
+    gap: 34px;
     min-height: 100%;
-    padding: 28px 18px calc(110px + env(safe-area-inset-bottom));
+    padding: 14px 34px calc(118px + env(safe-area-inset-bottom));
+  }
+
+  .mobileDestination {
+    display: grid;
+    gap: 14px;
+  }
+
+  .mobileDestination p,
+  .memoField > span {
+    margin: 0;
+    color: var(--muted);
+    font-size: 20px;
+    font-weight: 650;
+  }
+
+  .mobileDestination button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 62px;
+    width: 100%;
+    border: 0;
+    border-radius: 16px;
+    background: var(--panel);
+    color: var(--foreground);
+    padding: 0 24px;
+    box-shadow: var(--shadow);
+    text-align: left;
+  }
+
+  .mobileDestination button span:first-child {
+    overflow: hidden;
+    font-size: 21px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobileDestination button span:last-child {
+    color: #c2c3c9;
+    font-size: 54px;
+    font-weight: 300;
+    line-height: 1;
+  }
+
+  .memoField {
+    gap: 14px;
   }
 
   .quickTitleInput {
-    font-size: 34px;
-    line-height: 1.15;
+    min-height: 168px;
+    border: 0;
+    border-radius: 16px;
+    background: var(--panel);
+    box-shadow: var(--shadow);
+    padding: 22px 24px;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.55;
+  }
+
+  .quickTitleInput::placeholder {
+    color: #d8d9dd;
   }
 
   .quickActions {
@@ -465,35 +556,49 @@ h2 {
     left: 0;
     z-index: 5;
     grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
+    gap: 10px;
     margin: 0;
-    border-top: 1px solid var(--line);
-    background: color-mix(in srgb, var(--panel) 92%, transparent);
-    padding: 10px 12px calc(12px + env(safe-area-inset-bottom));
-    backdrop-filter: blur(18px);
+    border-top: 0;
+    background: transparent;
+    padding: 0 34px calc(28px + env(safe-area-inset-bottom));
   }
 
   .sendKindButton {
-    min-height: 54px;
-    padding: 0 8px;
-    font-size: 14px;
+    min-height: 62px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--foreground);
+    color: #ffffff;
+    padding: 0 10px;
+    font-size: 16px;
+    box-shadow: none;
   }
 
-  .clearButton {
-    position: fixed;
-    right: 14px;
-    bottom: calc(78px + env(safe-area-inset-bottom));
-    z-index: 6;
-    min-height: 36px;
-    padding: 0 12px;
-    font-size: 12px;
+  .sendKindButton:disabled {
+    background: #dedfe3;
+    opacity: 1;
+  }
+
+  .sendKindButton span {
+    width: 24px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.18);
   }
 
   .topBar {
-    min-height: 56px;
-    justify-content: space-between;
+    min-height: 0;
     gap: 8px;
-    padding: 0 18px;
+    border-bottom: 0;
+    padding: 0 34px;
+    font-size: 12px;
+  }
+
+  .topBar span:first-child {
+    display: none;
+  }
+
+  .notionMiniStatus {
+    margin-left: auto;
   }
 
   .settingsActions {
