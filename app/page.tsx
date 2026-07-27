@@ -375,13 +375,6 @@ export default function Home() {
         </header>
 
         <article className="quickEditor">
-          <div className="mobileDestination">
-            <p>投稿先</p>
-            <button type="button" onClick={() => setIsSettingsOpen(true)}>
-              <span>Inbox</span>
-              <span aria-hidden="true">›</span>
-            </button>
-          </div>
           <label className="memoField">
             <span>メモ入力</span>
             <textarea

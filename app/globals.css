@@ -232,10 +232,6 @@ h2 {
   padding: 92px 40px 120px;
 }
 
-.mobileDestination {
-  display: none;
-}
-
 .memoField {
   display: grid;
   gap: 14px;
@@ -312,11 +308,6 @@ h2 {
 .secondaryButton {
   background: var(--panel);
   color: var(--foreground);
-}
-
-.clearButton {
-  grid-column: 1 / -1;
-  width: max-content;
 }
 
 .modalBackdrop {
@@ -414,19 +405,19 @@ h2 {
 
 @media (max-width: 780px) {
   :root {
-    --background: #f3f3f7;
-    --foreground: #25262a;
-    --muted: #96979c;
-    --panel: #ffffff;
-    --panel-soft: #ffffff;
-    --line: #ececf1;
-    --accent: #26272b;
-    --accent-strong: #26272b;
-    --shadow: 0 12px 32px rgba(21, 22, 28, 0.06);
+    --background: #f5f2ed;
+    --foreground: #262923;
+    --muted: #8e8a82;
+    --panel: #fffdf8;
+    --panel-soft: #fbf5ea;
+    --line: #e5dccc;
+    --accent: #315f59;
+    --accent-strong: #244944;
+    --shadow: 0 16px 42px rgba(49, 43, 32, 0.08);
   }
 
   body {
-    overflow: hidden;
+    overflow: auto;
   }
 
   .appShell {
@@ -440,7 +431,7 @@ h2 {
     border-right: 0;
     border-bottom: 0;
     background: var(--background);
-    padding: calc(46px + env(safe-area-inset-top)) 34px 20px;
+    padding: calc(34px + env(safe-area-inset-top)) 28px 16px;
   }
 
   .brandRow {
@@ -455,23 +446,14 @@ h2 {
   }
 
   .settingsIconButton {
-    width: 34px;
-    height: 34px;
+    width: 42px;
+    height: 42px;
     border: 0;
-    background: transparent;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--panel) 72%, transparent);
+    box-shadow: var(--shadow);
     color: var(--foreground);
-    font-size: 0;
-  }
-
-  .settingsIconButton::before {
-    content: "";
-    width: 27px;
-    height: 21px;
-    background:
-      linear-gradient(var(--foreground), var(--foreground)) 0 0 / 27px 3px no-repeat,
-      linear-gradient(var(--foreground), var(--foreground)) 0 9px / 19px 3px no-repeat,
-      linear-gradient(var(--foreground), var(--foreground)) 0 18px / 11px 3px no-repeat;
-    border-radius: 2px;
+    font-size: 22px;
   }
 
   .editorPane {
@@ -482,114 +464,81 @@ h2 {
   .quickEditor {
     display: grid;
     align-content: start;
-    gap: 34px;
+    gap: 18px;
     min-height: 100%;
-    padding: 14px 34px calc(118px + env(safe-area-inset-bottom));
+    padding: 10px 28px calc(32px + env(safe-area-inset-bottom));
   }
 
-  .mobileDestination {
-    display: grid;
-    gap: 14px;
-  }
-
-  .mobileDestination p,
   .memoField > span {
     margin: 0;
     color: var(--muted);
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 650;
   }
 
-  .mobileDestination button {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    min-height: 62px;
-    width: 100%;
-    border: 0;
-    border-radius: 16px;
-    background: var(--panel);
-    color: var(--foreground);
-    padding: 0 24px;
-    box-shadow: var(--shadow);
-    text-align: left;
-  }
-
-  .mobileDestination button span:first-child {
-    overflow: hidden;
-    font-size: 21px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .mobileDestination button span:last-child {
-    color: #c2c3c9;
-    font-size: 54px;
-    font-weight: 300;
-    line-height: 1;
-  }
-
   .memoField {
-    gap: 14px;
+    gap: 12px;
   }
 
   .quickTitleInput {
-    min-height: 168px;
-    border: 0;
-    border-radius: 16px;
+    min-height: 190px;
+    border: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+    border-radius: 18px;
     background: var(--panel);
     box-shadow: var(--shadow);
-    padding: 22px 24px;
+    padding: 22px;
     font-size: 20px;
     font-weight: 600;
     line-height: 1.55;
   }
 
   .quickTitleInput::placeholder {
-    color: #d8d9dd;
+    color: #c9c1b6;
   }
 
   .quickActions {
-    position: fixed;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    z-index: 5;
+    position: static;
     grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    margin: 0;
+    gap: 8px;
+    margin-top: 0;
     border-top: 0;
     background: transparent;
-    padding: 0 34px calc(28px + env(safe-area-inset-bottom));
+    padding: 0;
   }
 
   .sendKindButton {
-    min-height: 62px;
+    gap: 5px;
+    min-height: 54px;
     border: 0;
-    border-radius: 999px;
-    background: var(--foreground);
+    border-radius: 14px;
+    background: var(--accent);
     color: #ffffff;
-    padding: 0 10px;
-    font-size: 16px;
-    box-shadow: none;
+    padding: 0 8px;
+    font-size: 14px;
+    line-height: 1;
+    white-space: nowrap;
+    box-shadow: 0 10px 24px rgba(36, 73, 68, 0.16);
   }
 
   .sendKindButton:disabled {
-    background: #dedfe3;
+    background: #ded7cc;
+    color: #fffaf2;
     opacity: 1;
+    box-shadow: none;
   }
 
   .sendKindButton span {
-    width: 24px;
-    height: 24px;
-    background: rgba(255, 255, 255, 0.18);
+    width: 20px;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.16);
+    font-size: 11px;
   }
 
   .topBar {
     min-height: 0;
     gap: 8px;
     border-bottom: 0;
-    padding: 0 34px;
+    padding: 0 28px;
     font-size: 12px;
   }
 
