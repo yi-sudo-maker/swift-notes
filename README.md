@@ -1,6 +1,6 @@
 # Swift Notes
 
-Fast Notion風のローカルWebノートアプリです。データはブラウザのローカル保存に入るため、サーバーやアカウントなしで使えます。
+Fast Notion風のクイック投稿アプリです。入力履歴はブラウザのローカル保存に入り、Notionトークンは公開環境の秘密設定に置けます。
 
 ## 機能
 
@@ -45,7 +45,25 @@ iPhoneならSafariで開き、共有ボタンから「ホーム画面に追加�
 
 ## Notion接続
 
-NotionのPersonal Access TokenまたはInternal Integration Tokenを入力し、送信先データベースのURLまたはIDを指定すると、現在のノートをNotionデータベースへ送信できます。
+NotionのPersonal Access TokenまたはInternal Integration Tokenを使い、送信先データベースへ新規ページを作成します。
+
+### 公開版でおすすめの設定
+
+スマホとMacの両方で使う場合は、端末ごとにNotionトークンを入れず、公開環境の秘密設定に次を保存します。
+
+```text
+NOTION_TOKEN=Notionのトークン
+NOTION_DATA_SOURCE_ID=InboxデータベースのURLまたはID
+NOTION_TITLE_PROPERTY=Name
+APP_ACCESS_KEY=自分だけが知っている合言葉
+```
+
+- `NOTION_TOKEN` と `NOTION_DATA_SOURCE_ID` がある場合、画面でNotionトークンを入力しなくても送信できます
+- `APP_ACCESS_KEY` を設定すると、スマホでは初回だけ「アプリの合言葉」を入力します
+- `APP_ACCESS_KEY` はNotionトークンそのものではないため、スマホに保存する情報を軽くできます
+- 公開URLを使う場合、`APP_ACCESS_KEY` なしでNotionトークンをサーバーに置く運用は避けてください
+
+### 端末ごとに入力する場合
 
 1. Notion側でトークンを作成します
 2. Internal Integration Tokenの場合は、対象データベースを接続に共有します
@@ -55,7 +73,7 @@ NotionのPersonal Access TokenまたはInternal Integration Tokenを入力し、
 6. タイトル入力欄に送信したい内容を入れます
 7. `タスク` / `メモ` / `アイデア` のどれかでNotionへ新規ページを作成します
 
-- トークンは `sessionStorage` のみに保存し、ブラウザを閉じると消えます
+- 画面に入力したトークンは `sessionStorage` のみに保存し、ブラウザを閉じると消えます
 - トークンはアプリのノートデータには保存しません
 - Notion APIへの通信はローカルAPI経由で行い、送信結果URLだけをノートに保存します
 - Notion接続には対象データベースへの読み取り権限と追加権限が必要です

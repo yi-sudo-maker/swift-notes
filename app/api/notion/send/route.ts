@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  getBearerToken,
+  getNotionConfig,
   getNotionHeaders,
+  getNotionToken,
+  isAccessAllowed,
   notionError,
   resolvedErrorMessage,
   resolveDataSource,
@@ -181,7 +183,15 @@ function toNotionBlocks(page: SwiftPage) {
 }
 
 export async function POST(request: NextRequest) {
-  const token = getBearerToken(request);
+  if (!isAccessAllowed(request)) {
+    return NextResponse.json(
+      { error: "アプリの合言葉を確認してください" },
+      { status: 401 },
+    );
+  }
+
+  const serverConfig = getNotionConfig();
+  const token = getNotionToken(request);
   if (!token) {
     return NextResponse.json(
       { error: "Notionトークンが必要です" },
@@ -199,8 +209,10 @@ export async function POST(request: NextRequest) {
       titleProperty?: unknown;
       page?: SwiftPage;
     };
-    dataSourceId = sanitizeNotionId(body.dataSourceId);
-    titleProperty = sanitizeTitleProperty(body.titleProperty);
+    dataSourceId = sanitizeNotionId(body.dataSourceId) || serverConfig.dataSourceId;
+    titleProperty = sanitizeTitleProperty(
+      body.titleProperty ?? serverConfig.titleProperty,
+    );
     page = body.page ?? {};
   } catch {
     return NextResponse.json(

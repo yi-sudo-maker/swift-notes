@@ -26,10 +26,18 @@ type NotionPage = {
 
 type SendKind = "タスク" | "メモ" | "アイデア";
 
+type NotionServerConfig = {
+  hasServerToken: boolean;
+  hasServerDataSource: boolean;
+  hasAccessKey: boolean;
+  titleProperty: string;
+};
+
 const STORAGE_KEY = "swift-notes.pages";
 const NOTION_SESSION_KEY = "swift-notes.notion-token";
 const NOTION_DATA_SOURCE_SESSION_KEY = "swift-notes.notion-data-source-id";
 const NOTION_TITLE_SESSION_KEY = "swift-notes.notion-title-property";
+const APP_ACCESS_KEY_STORAGE_KEY = "swift-notes.app-access-key";
 const STARTER_UPDATED_AT = new Date("2026-07-26T12:00:00+09:00").getTime();
 
 const now = () => Date.now();
@@ -81,6 +89,8 @@ export default function Home() {
   const [notionToken, setNotionToken] = useState("");
   const [notionDataSourceId, setNotionDataSourceId] = useState("");
   const [notionTitleProperty, setNotionTitleProperty] = useState("Name");
+  const [appAccessKey, setAppAccessKey] = useState("");
+  const [serverConfig, setServerConfig] = useState<NotionServerConfig | null>(null);
   const [notionPages, setNotionPages] = useState<NotionPage[]>([]);
   const [notionStatus, setNotionStatus] = useState("未接続");
   const [isNotionLoading, setIsNotionLoading] = useState(false);
@@ -97,6 +107,7 @@ export default function Home() {
       const storedTitleProperty = sessionStorage.getItem(
         NOTION_TITLE_SESSION_KEY,
       );
+      const storedAppAccessKey = localStorage.getItem(APP_ACCESS_KEY_STORAGE_KEY);
 
       if (storedPages) {
         try {
@@ -122,6 +133,7 @@ export default function Home() {
       }
       if (storedDataSourceId) setNotionDataSourceId(storedDataSourceId);
       if (storedTitleProperty) setNotionTitleProperty(storedTitleProperty);
+      if (storedAppAccessKey) setAppAccessKey(storedAppAccessKey);
 
       setStorageReady(true);
       window.setTimeout(() => titleRef.current?.focus(), 0);
@@ -139,6 +151,23 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    fetch("/api/notion/config")
+      .then((response) => response.json())
+      .then((config: NotionServerConfig) => {
+        setServerConfig(config);
+        if (config.titleProperty) setNotionTitleProperty(config.titleProperty);
+        if (config.hasServerToken && config.hasServerDataSource) {
+          setNotionStatus(
+            config.hasAccessKey ? "合言葉を入力してください" : "公開設定で接続済み",
+          );
+        }
+      })
+      .catch(() => {
+        setServerConfig(null);
+      });
+  }, []);
+
+  useEffect(() => {
     if (!storageReady) return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(pages));
     const timer = window.setTimeout(() => setSaveState("保存済み"), 380);
@@ -153,7 +182,26 @@ export default function Home() {
     [pages],
   );
 
-  const isConnected = Boolean(notionToken.trim() && notionDataSourceId.trim());
+  const hasServerNotionConfig = Boolean(
+    serverConfig?.hasServerToken && serverConfig.hasServerDataSource,
+  );
+  const hasAccessKey = Boolean(serverConfig?.hasAccessKey);
+  const hasValidClientConfig = Boolean(
+    notionToken.trim() && notionDataSourceId.trim(),
+  );
+  const isConnected = hasServerNotionConfig || hasValidClientConfig;
+
+  function getNotionRequestHeaders() {
+    return {
+      "Content-Type": "application/json",
+      ...(notionToken.trim()
+        ? { Authorization: `Bearer ${notionToken.trim()}` }
+        : {}),
+      ...(appAccessKey.trim()
+        ? { "X-App-Access-Key": appAccessKey.trim() }
+        : {}),
+    };
+  }
 
   function updateActiveTitle(title: string) {
     setSaveState("保存中...");
@@ -167,12 +215,16 @@ export default function Home() {
   async function connectNotionDataSource() {
     const token = notionToken.trim();
     const dataSourceId = notionDataSourceId.trim();
-    if (!token) {
+    if (!token && !serverConfig?.hasServerToken) {
       setNotionStatus("トークンを入力してください");
       return;
     }
-    if (!dataSourceId) {
+    if (!dataSourceId && !serverConfig?.hasServerDataSource) {
       setNotionStatus("データベースURLまたはIDを入力してください");
+      return;
+    }
+    if (hasAccessKey && !appAccessKey.trim()) {
+      setNotionStatus("アプリの合言葉を入力してください");
       return;
     }
 
@@ -182,10 +234,7 @@ export default function Home() {
     try {
       const response = await fetch("/api/notion/data-source", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: getNotionRequestHeaders(),
         body: JSON.stringify({ dataSourceId }),
       });
 
@@ -204,7 +253,10 @@ export default function Home() {
       const nextTitleProperty =
         payload.titleProperty ?? (notionTitleProperty.trim() || "Name");
 
-      sessionStorage.setItem(NOTION_SESSION_KEY, token);
+      if (token) sessionStorage.setItem(NOTION_SESSION_KEY, token);
+      if (appAccessKey.trim()) {
+        localStorage.setItem(APP_ACCESS_KEY_STORAGE_KEY, appAccessKey.trim());
+      }
       sessionStorage.setItem(NOTION_DATA_SOURCE_SESSION_KEY, nextDataSourceId);
       sessionStorage.setItem(NOTION_TITLE_SESSION_KEY, nextTitleProperty);
       setNotionDataSourceId(nextDataSourceId);
@@ -224,11 +276,13 @@ export default function Home() {
     sessionStorage.removeItem(NOTION_SESSION_KEY);
     sessionStorage.removeItem(NOTION_DATA_SOURCE_SESSION_KEY);
     sessionStorage.removeItem(NOTION_TITLE_SESSION_KEY);
+    localStorage.removeItem(APP_ACCESS_KEY_STORAGE_KEY);
     setNotionToken("");
     setNotionDataSourceId("");
     setNotionTitleProperty("Name");
+    setAppAccessKey("");
     setNotionPages([]);
-    setNotionStatus("未接続");
+    setNotionStatus(hasServerNotionConfig ? "公開設定で接続済み" : "未接続");
   }
 
   async function sendCurrentPageToNotion(kind: SendKind = "タスク") {
@@ -242,8 +296,13 @@ export default function Home() {
       titleRef.current?.focus();
       return;
     }
-    if (!token || !dataSourceId) {
+    if (!hasServerNotionConfig && (!token || !dataSourceId)) {
       setNotionStatus("設定画面でNotion接続を完了してください");
+      setIsSettingsOpen(true);
+      return;
+    }
+    if (hasAccessKey && !appAccessKey.trim()) {
+      setNotionStatus("設定画面でアプリの合言葉を入力してください");
       setIsSettingsOpen(true);
       return;
     }
@@ -254,10 +313,7 @@ export default function Home() {
     try {
       const response = await fetch("/api/notion/send", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: getNotionRequestHeaders(),
         body: JSON.stringify({
           dataSourceId,
           titleProperty,
@@ -286,7 +342,10 @@ export default function Home() {
 
       const nextDataSourceId = payload.dataSourceId ?? dataSourceId;
       const nextTitleProperty = payload.titleProperty ?? titleProperty;
-      sessionStorage.setItem(NOTION_SESSION_KEY, token);
+      if (token) sessionStorage.setItem(NOTION_SESSION_KEY, token);
+      if (appAccessKey.trim()) {
+        localStorage.setItem(APP_ACCESS_KEY_STORAGE_KEY, appAccessKey.trim());
+      }
       sessionStorage.setItem(NOTION_DATA_SOURCE_SESSION_KEY, nextDataSourceId);
       sessionStorage.setItem(NOTION_TITLE_SESSION_KEY, nextTitleProperty);
       setNotionDataSourceId(nextDataSourceId);
@@ -429,8 +488,27 @@ export default function Home() {
             </div>
 
             <div className="settingsFields">
+              {hasServerNotionConfig && (
+                <p className="notionStatus">
+                  公開設定にNotion送信先を保存済みです。この端末ではNotionトークン入力は不要です。
+                </p>
+              )}
+              {hasAccessKey && (
+                <label>
+                  <span>アプリの合言葉</span>
+                  <input
+                    type="password"
+                    value={appAccessKey}
+                    onChange={(event) => setAppAccessKey(event.target.value)}
+                    placeholder="初回だけ入力"
+                    autoComplete="off"
+                  />
+                </label>
+              )}
               <label>
-                <span>Notionトークン</span>
+                <span>
+                  Notionトークン{serverConfig?.hasServerToken ? "（予備）" : ""}
+                </span>
                 <input
                   type="password"
                   value={notionToken}
@@ -440,7 +518,10 @@ export default function Home() {
                 />
               </label>
               <label>
-                <span>データベースURLまたはID</span>
+                <span>
+                  データベースURLまたはID
+                  {serverConfig?.hasServerDataSource ? "（予備）" : ""}
+                </span>
                 <input
                   value={notionDataSourceId}
                   onChange={(event) => setNotionDataSourceId(event.target.value)}

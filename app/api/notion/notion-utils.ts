@@ -40,6 +40,35 @@ export function getBearerToken(request: NextRequest) {
   return token;
 }
 
+function getOptionalEnv(name: string) {
+  const value = process.env[name]?.trim();
+  return value || "";
+}
+
+export function getNotionConfig() {
+  return {
+    token: getOptionalEnv("NOTION_TOKEN"),
+    dataSourceId: sanitizeNotionId(getOptionalEnv("NOTION_DATA_SOURCE_ID")),
+    titleProperty: getOptionalEnv("NOTION_TITLE_PROPERTY") || "Name",
+    accessKey: getOptionalEnv("APP_ACCESS_KEY"),
+  };
+}
+
+export function getNotionToken(request: NextRequest) {
+  return getBearerToken(request) ?? getNotionConfig().token;
+}
+
+export function getRequestAccessKey(request: NextRequest) {
+  return request.headers.get("x-app-access-key")?.trim() ?? "";
+}
+
+export function isAccessAllowed(request: NextRequest) {
+  const { accessKey } = getNotionConfig();
+  if (!accessKey) return true;
+
+  return getRequestAccessKey(request) === accessKey;
+}
+
 export function sanitizeNotionId(value: unknown) {
   if (typeof value !== "string") return "";
 
