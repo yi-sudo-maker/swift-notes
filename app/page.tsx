@@ -39,6 +39,8 @@ const NOTION_DATA_SOURCE_SESSION_KEY = "swift-notes.notion-data-source-id";
 const NOTION_TITLE_SESSION_KEY = "swift-notes.notion-title-property";
 const APP_ACCESS_KEY_STORAGE_KEY = "swift-notes.app-access-key";
 const STARTER_UPDATED_AT = new Date("2026-07-26T12:00:00+09:00").getTime();
+const MAX_STORED_PAGES = 50;
+const MAX_VISIBLE_PAGES = 30;
 
 const now = () => Date.now();
 
@@ -92,13 +94,17 @@ export default function Home() {
   const [appAccessKey, setAppAccessKey] = useState("");
   const [serverConfig, setServerConfig] = useState<NotionServerConfig | null>(null);
   const [notionPages, setNotionPages] = useState<NotionPage[]>([]);
-  const [notionStatus, setNotionStatus] = useState("未接続");
+  const [notionStatus, setNotionStatus] = useState("待機中");
   const [isNotionLoading, setIsNotionLoading] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const titleRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
+    let canceled = false;
+
+    queueMicrotask(() => {
+      if (canceled) return;
+
       const storedPages = localStorage.getItem(STORAGE_KEY);
       const storedNotionToken = sessionStorage.getItem(NOTION_SESSION_KEY);
       const storedDataSourceId = sessionStorage.getItem(
@@ -113,9 +119,9 @@ export default function Home() {
         try {
           const parsed = JSON.parse(storedPages) as Page[];
           if (Array.isArray(parsed) && parsed.length > 0) {
-            const normalized = parsed.map((page) => ({
+            const normalized = parsed.slice(0, MAX_STORED_PAGES).map((page) => ({
               ...page,
-              blocks: Array.isArray(page.blocks) ? page.blocks : [],
+              blocks: [],
             }));
             const hasDraft = normalized.some((page) => !page.notionUrl);
             const nextPages = hasDraft ? normalized : [createPage(), ...normalized];
@@ -136,18 +142,12 @@ export default function Home() {
       if (storedAppAccessKey) setAppAccessKey(storedAppAccessKey);
 
       setStorageReady(true);
-      window.setTimeout(() => titleRef.current?.focus(), 0);
-    }, 0);
-
-    return () => window.clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    if (!("serviceWorker" in navigator)) return;
-
-    navigator.serviceWorker.register("/sw.js").catch(() => {
-      // PWA登録に失敗しても、送信機能自体はそのまま使える。
+      titleRef.current?.focus();
     });
+
+    return () => {
+      canceled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -169,8 +169,11 @@ export default function Home() {
 
   useEffect(() => {
     if (!storageReady) return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(pages));
-    const timer = window.setTimeout(() => setSaveState("保存済み"), 380);
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(pages.slice(0, MAX_STORED_PAGES)),
+    );
+    const timer = window.setTimeout(() => setSaveState("保存済み"), 90);
 
     return () => window.clearTimeout(timer);
   }, [pages, storageReady]);
@@ -178,7 +181,10 @@ export default function Home() {
   const activePage = pages.find((page) => page.id === activePageId) ?? pages[0];
 
   const visiblePages = useMemo(
-    () => pages.filter((page) => page.title.trim() || page.notionUrl),
+    () =>
+      pages
+        .filter((page) => page.title.trim() || page.notionUrl)
+        .slice(0, MAX_VISIBLE_PAGES),
     [pages],
   );
 
@@ -190,6 +196,7 @@ export default function Home() {
     notionToken.trim() && notionDataSourceId.trim(),
   );
   const isConnected = hasServerNotionConfig || hasValidClientConfig;
+  const canUseServerConfig = serverConfig === null || hasServerNotionConfig;
 
   function getNotionRequestHeaders() {
     return {
@@ -296,7 +303,7 @@ export default function Home() {
       titleRef.current?.focus();
       return;
     }
-    if (!hasServerNotionConfig && (!token || !dataSourceId)) {
+    if (!canUseServerConfig && (!token || !dataSourceId)) {
       setNotionStatus("設定画面でNotion接続を完了してください");
       setIsSettingsOpen(true);
       return;
@@ -309,6 +316,23 @@ export default function Home() {
 
     setIsNotionLoading(true);
     setNotionStatus("送信中...");
+    const sentAt = now();
+    const sentPageId = activePage.id;
+    const optimisticPage: Page = {
+      ...activePage,
+      title,
+      notionUrl: "#sending",
+      updatedAt: sentAt,
+    };
+    const draft = createPage();
+    setPages((current) => [
+      draft,
+      ...current
+        .map((page) => (page.id === sentPageId ? optimisticPage : page))
+        .slice(0, MAX_STORED_PAGES - 1),
+    ]);
+    setActivePageId(draft.id);
+    window.setTimeout(() => titleRef.current?.focus(), 0);
 
     try {
       const response = await fetch("/api/notion/send", {
@@ -350,10 +374,9 @@ export default function Home() {
       sessionStorage.setItem(NOTION_TITLE_SESSION_KEY, nextTitleProperty);
       setNotionDataSourceId(nextDataSourceId);
       setNotionTitleProperty(nextTitleProperty);
-      const draft = createPage();
       setPages((current) => {
         const sentPages = current.map((page) =>
-          page.id === activePage.id
+          page.id === sentPageId
             ? {
                 ...page,
                 title,
@@ -362,13 +385,22 @@ export default function Home() {
               }
             : page,
         );
-        return [draft, ...sentPages];
+        return sentPages;
       });
-      setActivePageId(draft.id);
       setNotionPages((current) => [payload.page, ...current].slice(0, 10));
       setNotionStatus(`${kind}として送信しました`);
-      window.setTimeout(() => titleRef.current?.focus(), 0);
     } catch (error) {
+      setPages((current) =>
+        current
+          .filter((page) => page.id !== draft.id)
+          .map((page) =>
+            page.id === sentPageId
+              ? { ...page, title, notionUrl: undefined, updatedAt: sentAt }
+              : page,
+          ),
+      );
+      setActivePageId(sentPageId);
+      window.setTimeout(() => titleRef.current?.focus(), 0);
       setNotionStatus(
         error instanceof Error ? error.message : "Notionへ送信できませんでした",
       );
@@ -420,7 +452,12 @@ export default function Home() {
             >
               <span className="pageTitle">{page.title || "無題"}</span>
               <span className="pageMeta">
-                {page.notionUrl ? "送信済み" : "下書き"} ・ {formatDate(page.updatedAt)}
+                {page.notionUrl === "#sending"
+                  ? "送信中"
+                  : page.notionUrl
+                    ? "送信済み"
+                    : "下書き"}{" "}
+                ・ {formatDate(page.updatedAt)}
               </span>
             </button>
           ))}

@@ -21,6 +21,40 @@ type NotionErrorBody = {
   message?: string;
 };
 
+type ResolvedDataSource =
+  | {
+      id: string;
+      titleProperty: string;
+      dateProperty?: string;
+      categoryProperty?: string;
+      memoProperty?: string;
+      ideaProperty?: string;
+      progressProperty?: ProgressProperty;
+      errorStatus?: never;
+      errorDetail?: never;
+      attemptedId?: never;
+      dataSourceError?: never;
+    }
+  | {
+      id?: never;
+      titleProperty?: never;
+      dateProperty?: never;
+      categoryProperty?: never;
+      memoProperty?: never;
+      ideaProperty?: never;
+      progressProperty?: never;
+      errorStatus: number;
+      errorDetail?: string;
+      attemptedId?: string;
+      dataSourceError?: string;
+    };
+
+const DATA_SOURCE_CACHE_MS = 5 * 60 * 1000;
+const dataSourceCache = new Map<
+  string,
+  { expiresAt: number; resolved: ResolvedDataSource }
+>();
+
 async function readNotionError(response: Response) {
   try {
     const body = (await response.json()) as NotionErrorBody;
@@ -159,7 +193,11 @@ export function findProgressProperty(
 export async function resolveDataSource(
   token: string,
   databaseOrDataSourceId: string,
-) {
+): Promise<ResolvedDataSource> {
+  const cacheKey = `${token.slice(-12)}:${databaseOrDataSourceId}`;
+  const cached = dataSourceCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) return cached.resolved;
+
   const dataSourceResponse = await fetch(
     `https://api.notion.com/v1/data_sources/${databaseOrDataSourceId}`,
     {
@@ -169,7 +207,7 @@ export async function resolveDataSource(
 
   if (dataSourceResponse.ok) {
     const dataSource = (await dataSourceResponse.json()) as DataSourceSchema;
-    return {
+    const resolved: ResolvedDataSource = {
       id: dataSource.id,
       titleProperty: findTitleProperty(dataSource.properties),
       dateProperty: findDateProperty(dataSource.properties),
@@ -177,6 +215,11 @@ export async function resolveDataSource(
       progressProperty: findProgressProperty(dataSource.properties),
       ...findCheckboxProperties(dataSource.properties),
     };
+    dataSourceCache.set(cacheKey, {
+      expiresAt: Date.now() + DATA_SOURCE_CACHE_MS,
+      resolved,
+    });
+    return resolved;
   }
   const dataSourceError = await readNotionError(dataSourceResponse);
 
@@ -225,7 +268,7 @@ export async function resolveDataSource(
   }
 
   const schema = (await schemaResponse.json()) as DataSourceSchema;
-  return {
+  const resolved: ResolvedDataSource = {
     id: dataSourceId,
     titleProperty: findTitleProperty(schema.properties),
     dateProperty: findDateProperty(schema.properties),
@@ -233,6 +276,11 @@ export async function resolveDataSource(
     progressProperty: findProgressProperty(schema.properties),
     ...findCheckboxProperties(schema.properties),
   };
+  dataSourceCache.set(cacheKey, {
+    expiresAt: Date.now() + DATA_SOURCE_CACHE_MS,
+    resolved,
+  });
+  return resolved;
 }
 
 export async function notionError(status: number, response?: Response) {
