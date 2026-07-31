@@ -4,3 +4,4 @@
 - `npm run dev` can fail in the sandbox with `listen EPERM` on the inspector port. Retry with explicit approval for local port usage.
 - Do not run `npm run build` in parallel with another build/test command. Vinext can fail with `EEXIST` while both processes write to `dist/.openai/drizzle`.
 - Sites `save_site_version` requires the full commit SHA. Do not pass a short SHA such as `71617f5`.
+- Git commits can fail in the sandbox with `.git/index.lock: Operation not permitted`. Retry the same git write command with explicit approval.
