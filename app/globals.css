@@ -47,7 +47,7 @@ body {
   margin: 0;
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
   overscroll-behavior: none;
 }
 
@@ -115,6 +115,13 @@ h1 {
 
 h2 {
   font-size: 28px;
+}
+
+.versionName {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 650;
 }
 
 .iconButton {

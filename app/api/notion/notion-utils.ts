@@ -75,7 +75,8 @@ export function getBearerToken(request: NextRequest) {
 }
 
 function getOptionalEnv(name: string) {
-  const value = process.env[name]?.trim();
+  const env = typeof process === "undefined" ? undefined : process.env;
+  const value = env?.[name]?.trim();
   return value || "";
 }
 

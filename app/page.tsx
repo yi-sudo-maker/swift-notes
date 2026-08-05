@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from "react";
 
 type Block = {
   id: string;
@@ -41,6 +48,7 @@ const APP_ACCESS_KEY_STORAGE_KEY = "swift-notes.app-access-key";
 const STARTER_UPDATED_AT = new Date("2026-07-26T12:00:00+09:00").getTime();
 const MAX_STORED_PAGES = 50;
 const MAX_VISIBLE_PAGES = 30;
+const APP_VERSION_NAME = "v0.1.0";
 
 const now = () => Date.now();
 
@@ -150,21 +158,20 @@ export default function Home() {
     };
   }, []);
 
-  useEffect(() => {
-    fetch("/api/notion/config")
-      .then((response) => response.json())
-      .then((config: NotionServerConfig) => {
-        setServerConfig(config);
-        if (config.titleProperty) setNotionTitleProperty(config.titleProperty);
-        if (config.hasServerToken && config.hasServerDataSource) {
-          setNotionStatus(
-            config.hasAccessKey ? "合言葉を入力してください" : "公開設定で接続済み",
-          );
-        }
-      })
-      .catch(() => {
-        setServerConfig(null);
-      });
+  const loadServerConfig = useCallback(async () => {
+    try {
+      const response = await fetch("/api/notion/config");
+      const config = (await response.json()) as NotionServerConfig;
+      setServerConfig(config);
+      if (config.titleProperty) setNotionTitleProperty(config.titleProperty);
+      if (config.hasServerToken && config.hasServerDataSource) {
+        setNotionStatus(
+          config.hasAccessKey ? "合言葉を入力してください" : "公開設定で接続済み",
+        );
+      }
+    } catch {
+      setServerConfig(null);
+    }
   }, []);
 
   useEffect(() => {
@@ -208,6 +215,11 @@ export default function Home() {
         ? { "X-App-Access-Key": appAccessKey.trim() }
         : {}),
     };
+  }
+
+  function openSettings() {
+    setIsSettingsOpen(true);
+    void loadServerConfig();
   }
 
   function updateActiveTitle(title: string) {
@@ -433,7 +445,7 @@ export default function Home() {
           <button
             className="settingsIconButton"
             type="button"
-            onClick={() => setIsSettingsOpen(true)}
+            onClick={openSettings}
             aria-label="Notion設定"
             title="Notion設定"
           >
@@ -513,6 +525,7 @@ export default function Home() {
               <div>
                 <p className="eyebrow">設定</p>
                 <h2>Notion送信先</h2>
+                <p className="versionName">Swift Notes {APP_VERSION_NAME}</p>
               </div>
               <button
                 className="iconButton"
